@@ -528,7 +528,7 @@ class Query(object):
         -------
         string of img64 or plotly.offline.plot
             Depending on the kind of plot produced
-            a 64 bytes string image is retuned(matplotlib)
+            a 64 bytes string image is returned(matplotlib)
             or a html string for plotly plots is returned.
         """
         fig = self.plot(kind=kind, **kwargs)
@@ -580,11 +580,10 @@ class Query(object):
         """
         with self.db_engine.connect() as con:
             # clip urban shape with lookup table
-            sql_urban_geom = "ST_GeomFromText('{}', 25832)".format(
-                        self.urban_shp.wkt)
+
             sql_clip = (
                 "WITH urban_geom AS ("+
-                    f"ST_GeomFromText('{self.urban_shp.wkt}', 25832) "
+                    f"SELECT ST_GeomFromText('{self.urban_shp.wkt}', 25832) as geom)"
                 "SELECT inters.sim_id, inters.gen_id, inters.nat_id, " +
                     "ST_UNION(int_geom) as geometry, " +
                     "SUM(ST_AREA(int_geom)) AS area, " +
@@ -602,7 +601,7 @@ class Query(object):
                 "WHERE ST_Dimension(inters.int_geom)=2 " +
                 "GROUP BY inters.sim_id, inters.gen_id, inters.nat_id, " +
                     "lbc.color, ltn.txt, ltn.kurz, lnr.name"
-                    ).format(sql_urban_geom)
+                    )
 
             self.lookup_clip = gpd.read_postgis(
                 sql=sql_clip,
@@ -618,7 +617,7 @@ class Query(object):
                 "ll.name as lanu_name FROM tbl_lookup_polygons tlp " +
                 "JOIN leg_lanuid ll ON ll.lanu_id=tlp.lanu_id " +
                 "WHERE gen_id IN ({genid}) AND nat_id IN ({natid}) " +
-                    "AND DIV(clc_code, 100) != 1 " +
+                    "AND NOT is_urban " +
                 "GROUP BY gen_id, nat_id, tlp.lanu_id, ll.name").format(
                     genid=", ".join(self.lookup_clip.index
                                     .get_level_values("gen_id")
