@@ -23,7 +23,6 @@ __copyright__ = "Copyright 2023, Max Schmit"
 __version__ = "1.2.1"
 
 # libraries
-from typing import NoReturn
 import geopandas as gpd
 import pandas as pd
 from getpass import getpass
