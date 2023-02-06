@@ -692,7 +692,7 @@ class Query(object):
             "FROM tbl_lookup_polygons tlp " +
             "JOIN leg_lanuid ll ON ll.lanu_id=tlp.lanu_id " +
             "WHERE gen_id IN ({0}) AND nat_id IN ({1}) " +
-                "AND DIV(clc_code, 100) > 1 ").format(
+                "AND not is_urban;").format(
             ", ".join(self.lookup_clip.index.get_level_values("gen_id")\
                       .unique().astype(str)),
             ", ".join(self.lookup_clip.index.get_level_values("nat_id")\
@@ -807,7 +807,7 @@ class Query(object):
                 "WHERE ST_Intersects(geom, " +
                         "(ST_Buffer({urban_geom}, {dist}))) " +
                     "AND gen_id IN ({genids}) "+
-                    "AND DIV(clc_code, 100) > 1 " +
+                    "AND not is_urban " +
                 "GROUP BY gen_id, lanu_id")
 
             missing_genids = \
