@@ -585,26 +585,33 @@ class Query(object):
         with self.db_engine.connect() as con:
             # clip urban shape with lookup table
 
-            sql_clip = (
-                "WITH urban_geom AS ("+
-                    f"SELECT ST_GeomFromText('{self.urban_shp.wkt}', 25832) as geom)"
-                "SELECT inters.sim_id, inters.gen_id, inters.nat_id, " +
-                    "ST_UNION(int_geom) as geometry, " +
-                    "SUM(ST_AREA(int_geom)) AS area, " +
-                    "lbc.color , ltn.txt as leg_tkle_txt, " +
-                    "ltn.kurz as leg_tkle_kurz " +
-                "FROM (SELECT *, ST_Intersection(geom, (SELECT geom from urban_geom)) as int_geom " +
-                    "FROM tbl_lookup_polygons " +
-                    "WHERE ST_Intersects(geom, (SELECT geom from urban_geom))" +
-                    ") AS inters " +
-                "JOIN tbl_simulation_polygons tbs " +
-                    "ON tbs.sim_id = inters.sim_id " +
-                "JOIN leg_buek_col lbc ON lbc.sym_nr=tbs.sym_nr " +
-                "JOIN leg_tklenr ltn ON ltn.tkle_nr=tbs.tkle_nr " +
-                "WHERE ST_Dimension(inters.int_geom)=2 " +
-                "GROUP BY inters.sim_id, inters.gen_id, inters.nat_id, " +
-                    "lbc.color, ltn.txt, ltn.kurz"
-                    )
+            sql_clip = f"""
+                WITH urban_geom AS (
+                        SELECT ST_GeomFromText('{self.urban_shp.wkt}', 25832) as geom
+                    ), clip_sim AS (
+                        SELECT sim_id, gen_id, sym_nr, tkle_nr,
+                            ST_Intersection(geom, (SELECT geom from urban_geom)) as geom
+                        FROM tbl_simulation_polygons
+                        WHERE ST_Intersects(geom, (SELECT geom from urban_geom))
+                    ), inters AS (
+                        SELECT sim_id, gen_id, sym_nr, tkle_nr,
+                            tn.nat_id,
+                            ST_Intersection(cs.geom, tn.geom) as geom
+                        FROM clip_sim cs
+                        JOIN tbl_nre tn
+                        ON ST_Intersects(cs.geom, tn.geom)
+                )
+                SELECT inters.sim_id, inters.gen_id, inters.nat_id,
+                        ST_UNION(geom) as geometry,
+                        SUM(ST_AREA(geom)) AS area,
+                        lbc.color , ltn.txt as leg_tkle_txt,
+                        ltn.kurz as leg_tkle_kurz
+                    FROM inters
+                    JOIN leg_buek_col lbc ON lbc.sym_nr=inters.sym_nr
+                    JOIN leg_tklenr ltn ON ltn.tkle_nr=inters.tkle_nr
+                    WHERE ST_Dimension(inters.geom)=2
+                    GROUP BY inters.sim_id, inters.gen_id, inters.nat_id,
+                            lbc.color, ltn.txt, ltn.kurz;"""
 
             self.lookup_clip = gpd.read_postgis(
                 sql=sql_clip,
@@ -1040,7 +1047,7 @@ class Query(object):
         # add NRE ID and border
         # nat_dis = lookup_clip.dissolve("nat_id").reset_index().explode(index_parts=True)
         sql_nre_clip = (
-            'SELECT tbl_nre.nat_id, name, ST_SetSRID(geom, 25832) geom ' +
+            'SELECT tbl_nre.nat_id, name, geom ' +
             'FROM tbl_nre ' +
             "WHERE tbl_nre.nat_id in ({})").format(
                 ", ".join(lookup_clip.index.get_level_values("nat_id").unique().astype(str)))
