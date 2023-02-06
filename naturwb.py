@@ -20,7 +20,7 @@
 
 __author__ = "Max Schmit"
 __copyright__ = "Copyright 2023, Max Schmit"
-__version__ = "1.2.1"
+__version__ = "1.3.0"
 
 # libraries
 import geopandas as gpd
