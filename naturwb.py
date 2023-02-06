@@ -2173,11 +2173,10 @@ if __name__ == '__main__':
         urban_shp = geoencode(urban_name)
 
         click.echo('starting query!')
+        start = time.time()
         Query(urban_shp=urban_shp, db_engine=pool.engine, do_plots=do_plots)
-
+        end = time.time()
+        click.echo(f'Execution time: {end-start}')
         click.echo('done!')
 
-    start = time.time()
     cli()
-    end = time.time()
-    click.echo(f'Execution time: {end-start}')
