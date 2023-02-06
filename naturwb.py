@@ -2145,3 +2145,39 @@ class Query(object):
                     MSGS_RAW["special_stat_ids"][stat_id].format(
                         anteil=self.sim_infos.loc[
                             self.sim_infos["stat_id"] == int(stat_id), "anteil"].sum()))
+
+
+# this is a cli setup mainly to debug the package
+if __name__ == '__main__':
+    from max_fun.geometry import geoencode
+    import click
+    import time
+
+    @click.command()
+    @click.option('--db_user', help='NatUrWB Database username')
+    @click.option('--db_pwd', help='NatUrWB Database password')
+    @click.option('--db_host', help='NatUrWB Database host')
+    @click.option('--urban_name', help='Name of the urban area to query for')
+    @click.option('--do_plots', help='Should the plotting be tested', type=bool)
+    def cli(db_user, db_pwd, db_host, urban_name, db_port=5432, db_schema="naturwb",
+                  do_plots=False):
+        click.echo('creating NatUrWB-Pool object!')
+        pool = Pool(1,
+                    db_pwd=db_pwd,
+                    db_user=db_user,
+                    db_host=db_host,
+                    db_port=db_port,
+                    db_schema=db_schema)
+
+        click.echo('creating urban_shp!')
+        urban_shp = geoencode(urban_name)
+
+        click.echo('starting query!')
+        Query(urban_shp=urban_shp, db_engine=pool.engine, do_plots=do_plots)
+
+        click.echo('done!')
+
+    start = time.time()
+    cli()
+    end = time.time()
+    click.echo(f'Execution time: {end-start}')
