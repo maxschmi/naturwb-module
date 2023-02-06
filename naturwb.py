@@ -588,7 +588,7 @@ class Query(object):
                     "ST_UNION(int_geom) as geometry, " +
                     "SUM(ST_AREA(int_geom)) AS area, " +
                     "lbc.color , ltn.txt as leg_tkle_txt, " +
-                    "ltn.kurz as leg_tkle_kurz, lnr.name AS leg_nat_name " +
+                    "ltn.kurz as leg_tkle_kurz " +
                 "FROM (SELECT *, ST_Intersection(geom, (SELECT geom from urban_geom)) as int_geom " +
                     "FROM tbl_lookup_polygons " +
                     "WHERE ST_Intersects(geom, (SELECT geom from urban_geom))" +
@@ -597,10 +597,9 @@ class Query(object):
                     "ON tbs.sim_id = inters.sim_id " +
                 "JOIN leg_buek_col lbc ON lbc.sym_nr=tbs.sym_nr " +
                 "JOIN leg_tklenr ltn ON ltn.tkle_nr=tbs.tkle_nr " +
-                "JOIN leg_nre lnr ON lnr.nat_id=inters.nat_id "
                 "WHERE ST_Dimension(inters.int_geom)=2 " +
                 "GROUP BY inters.sim_id, inters.gen_id, inters.nat_id, " +
-                    "lbc.color, ltn.txt, ltn.kurz, lnr.name"
+                    "lbc.color, ltn.txt, ltn.kurz"
                     )
 
             self.lookup_clip = gpd.read_postgis(
@@ -697,10 +696,10 @@ class Query(object):
 
     def _sql_nre(self):
         sql_nre = (
-            "SELECT tbl_nre.nat_id, leg_nre.name, " +
-            "ST_Transform(ST_SetSRID(geom, 25832), 4326) geometry FROM tbl_nre " +
-            "JOIN leg_nre ON leg_nre.nat_id=tbl_nre.nat_id " +
-            "WHERE tbl_nre.nat_id in ({})".format(
+            """SELECT nat_id, name, 
+                      ST_Transform(ST_SetSRID(geom, 25832), 4326) geometry 
+               FROM tbl_nre 
+               WHERE tbl_nre.nat_id in ({});""".format(
                 ", ".join(self.lookup_clip.index.get_level_values("nat_id")
                           .unique().astype(str))))
         with self.db_engine.connect() as con:
@@ -975,11 +974,11 @@ class Query(object):
             return self.results_genid
         else:
             self.results_genid = self.lookup_clip\
-                [["geometry", "leg_tkle_txt", "leg_tkle_kurz", "color", "leg_nat_name"]]\
+                [["geometry", "leg_tkle_txt", "leg_tkle_kurz", "color"]]\
                 .join(self.res_gat_2)\
                 .rename({"leg_tkle_kurz": "Boden_kurz", "leg_tkle_txt": "Boden_lang",
-                        "leg_nat_name": "nat_name", "runoff":"Abfluss",
-                        "tp": "GWNB", "n": "N", "et": "ET", "oa":"OA", "za": "ZA",
+                        "runoff":"Abfluss", "tp": "GWNB", "n": "N", 
+                        "et": "ET", "oa":"OA", "za": "ZA",
                         "za_gwnah": "ZA_GWnah"}, axis=1)
             return self.results_genid
 
@@ -1035,17 +1034,31 @@ class Query(object):
             colors_gen.append(color)
 
         # add NRE ID and border
-        nat_dis = lookup_clip.dissolve("nat_id").reset_index().explode(index_parts=True)
-        lut = len(nat_dis["nat_id"].unique())
+        # nat_dis = lookup_clip.dissolve("nat_id").reset_index().explode(index_parts=True)
+        sql_nre_clip = (
+            'SELECT tbl_nre.nat_id, name, ST_SetSRID(geom, 25832) geom ' +
+            'FROM tbl_nre ' +
+            "WHERE tbl_nre.nat_id in ({})").format(
+                ", ".join(lookup_clip.index.get_level_values("nat_id").unique().astype(str)))
+
+        with self.db_engine.connect() as conn:
+            nre_clip = gpd.read_postgis(
+                sql=sql_nre_clip, 
+                con=conn,
+                geom_col="geom",
+                index_col="nat_id",
+                crs=25832
+            )
+        lut = len(np.unique(nre_clip.index.values))
         colors_nat = cm.get_cmap(name="Set1", lut=lut)(range(0, lut))
         hatches_all = ["/", "\\", "|", "-", ".", "x", "+",
                        "//", "||", "\\\\", "*", "+"] * 2
         labels_nat = []
-        for (natid, gdf_nat), hatch, color in zip(nat_dis.groupby("nat_id"),
+        for (_, gdf_nat), hatch, color in zip(nre_clip.groupby("nat_id"),
                                                   hatches_all, colors_nat):
             gdf_nat.plot(ax=ax, edgecolor=color,
                          facecolor=(0, 0, 0, 0), hatch=hatch)
-            labels_nat.append(gdf_nat["leg_nat_name"].iloc[0])
+            labels_nat.append(gdf_nat["name"].iloc[0])
 
         # add urban shape
         self.urban_shp_utm.boundary.plot(ax=ax, color="k")
