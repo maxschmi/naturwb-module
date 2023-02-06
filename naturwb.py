@@ -5,17 +5,22 @@
 ##############################################################################
 #                              based on:                                     #
 #               Masterarbeit Uni Freiburg Hydrologie                         #
-#                                                                            #
 #  Ermittlung einer naturnahen urbanen Wasserbilanz (NatUrWB)                #
 #               als Zielvorgabe für deutsche Städte                          #
 #                               -                                            #
 #              Erstellung eines interaktiven Webtools                        #
 #                                                                            #
+#                           published on:                                    #
+# Schmit, Max; Leistert, Hannes; Steinbrich, Andreas; Weiler, Markus (2022)  #
+#    Webtool zur Ermittlung der naturnahen urbanen Wasserbilanz (NatUrWB)    #
+#                  Korrespondenz Wasserwirtschaft, DWA                       #
+#                      DOI: 10.3243/kwe2022.09.002                           #
+#     Online verfügbar unter https://freidok.uni-freiburg.de/data/229574     #
 ##############################################################################
 
 __author__ = "Max Schmit"
-__copyright__ = "Copyright 2022, Max Schmit"
-__version__ = "1.2.0"
+__copyright__ = "Copyright 2023, Max Schmit"
+__version__ = "1.2.1"
 
 # libraries
 from typing import NoReturn
