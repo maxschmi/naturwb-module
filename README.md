@@ -13,6 +13,12 @@ To install the package use PIP to install the Github repository:
 pip install git+https://github.com/maxschmi/naturwb-module
 ```
 
+or for the development version
+
+```
+pip install git+https://github.com/maxschmi/naturwb-module.git@dev
+```
+
 # How to cite
 > Schmit, Max; Leistert, Hannes; Steinbrich, Andreas; Weiler, Markus (2022), Webtool zur Ermittlung der naturnahen urbanen Wasserbilanz (NatUrWB), Korrespondenz Wasserwirtschaft, DWA, DOI: 10.3243/kwe2022.09.002, Online verfügbar unter https://freidok.uni-freiburg.de/data/229574
 
