@@ -18,10 +18,6 @@
 #     Online verfügbar unter https://freidok.uni-freiburg.de/data/229574     #
 ##############################################################################
 
-__author__ = "Max Schmit"
-__copyright__ = "Copyright 2023, Max Schmit"
-__version__ = "1.3.0"
-
 # libraries
 import geopandas as gpd
 import pandas as pd
@@ -44,10 +40,10 @@ try:
 except ImportError:
     import importlib_resources as pkg_resources
 try:
-    from .. import data
+    from . import data
 except ImportError:
     try:
-        from . import data
+        from .. import data
     except ImportError:
         import data
 from io import BytesIO
