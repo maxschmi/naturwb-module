@@ -27,8 +27,14 @@ import geopandas as gpd
 import pandas as pd
 from getpass import getpass
 from shapely.geometry import Polygon, MultiPolygon
-from shapely.geometry.polygon import PolygonAdapter
-from shapely.geometry.multipolygon import MultiPolygonAdapter
+try:
+    from shapely.geometry.polygon import PolygonAdapter
+except:
+    from shapely.geometry import Polygon as PolygonAdapter
+try:
+    from shapely.geometry.polygon import MultiPolygonAdapter
+except:
+    from shapely.geometry import Polygon as MultiPolygonAdapter
 import numpy as np
 import sqlalchemy
 import json
