@@ -1,6 +1,6 @@
 # naturwb-module
 
-author: ![Max Schmit](https://github.com/maxschmi)
+author: [Max Schmit](https://github.com/maxschmi)
 
 This is the Python module to create a NatUrWB reference from the Database. The database structure got visualized on [dbdiagram](https://dbdiagram.io/d/63a48df999cb1f3b55a30e7d)
 
