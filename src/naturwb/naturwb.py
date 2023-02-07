@@ -713,7 +713,7 @@ class Query(object):
     def _sql_nre(self):
         sql_nre = (
             """SELECT nat_id, name, 
-                      ST_Transform(geom), 4326) geometry 
+                      ST_Transform(geom, 4326) geometry 
                FROM tbl_nre 
                WHERE tbl_nre.nat_id in ({});""".format(
                 ", ".join(self.lookup_clip.index.get_level_values("nat_id")
