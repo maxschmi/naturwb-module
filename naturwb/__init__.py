@@ -1,1 +1,1 @@
-from naturwb import Pool, Query
+from .naturwb import Pool, Query
