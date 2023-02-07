@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "naturwb"
+authors = [
+    {name = "Max Schmit", email = "max.schmit@hydrology.uni-freiburg.de"}
+]
+description = "This is a package to calculate the NatUrWB reference from the database."
+readme = "README.md"
+keywords = ["hydrology", "urban"]
+license = {text = "GNU GPT3"}
+requires-python = ">=3.7"
+classifiers=[
+        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Topic :: Scientific/Engineering :: Hydrology',
+        'Topic :: Scientific/Engineering :: Atmospheric Science',
+        'Intended Audience :: Science/Research',
+        'Natural Language :: English'
+      ]
+dependencies = [
+    "geopandas",
+    "pandas",
+    "numpy",
+    "sqlalchemy",
+    "psycopg2"
+]
+dynamic = ["version"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+naturwb = ["*.jpg", "*.json"]
+
+[tool.setuptools.dynamic]
+version = {attr = "naturwb.__version__"}
