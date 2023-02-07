@@ -40,7 +40,10 @@ except ImportError:
 try:
     from .. import data
 except ImportError:
-    import data
+    try:
+        from . import data
+    except ImportError:
+        import data
 from io import BytesIO
 import base64
 
