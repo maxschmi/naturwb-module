@@ -1,2 +1,4 @@
 sync.ffs_db
 *.pyc
+build
+*.egg-info
