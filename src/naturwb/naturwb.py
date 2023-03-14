@@ -1378,7 +1378,7 @@ class Query(object):
             ax=ax,
             ylabel="",
             labels=[
-                "Direktabfluss (Q)",
+                "Abfluss (Q)",
                 "Grundwasserneubildung (GWNB)",
                 "Evapotranspitation (ET)"],
             autopct='%1.0f%%',
@@ -1412,7 +1412,7 @@ class Query(object):
             go.Pie(
                 values=(naturwb_ref[["runoff", "tp", "et"]] /
                         naturwb_ref[["runoff", "tp", "et"]].sum()),
-                labels=["Direktabfluss (Q)", "Grundwasserneubildung (GWNB)", "Evapotranspitation (ET)"],
+                labels=["Abfluss (Q)", "Grundwasserneubildung (GWNB)", "Evapotranspitation (ET)"],
                 hovertemplate="%{label}<br>%{value:.1%}<extra></extra>",
                 texttemplate="%{value:.1%}",
                 marker=dict(
@@ -1688,7 +1688,7 @@ class Query(object):
                     hoverformat="ET: %{a:2}")
             ),
             annotations=[
-                dict(text="Direktabfluss",
+                dict(text="Abfluss",
                      x=0.07, xref="paper",
                      y=0.5, yref="paper",
                      textangle=-60,
@@ -1743,7 +1743,7 @@ class Query(object):
         name_dict = {
             "legend": {
                 "et_part": "Evaoptranspiration (ET)",
-                "runoff_part": "Direktabfluss (Q)",
+                "runoff_part": "Abfluss (Q)",
                 "tp_part": "Grundwasserneubildung (GWNB)"},
             "short": {
                 "et_part": "ET",
@@ -1915,7 +1915,7 @@ class Query(object):
             flows_sk2=df_sankey[["za"]].append(
                     -df_sankey[["za_oa", "za_gwnah"]]).to_list()
             labels_sk2=["delete",
-                    "Zwischenabfluss\nzum Direktabfluss",
+                    "Zwischenabfluss\nzum Abfluss",
                     "Zwischenabfluss\nbei hohem Grundwasser"]
             orientations_sk2=[0, 0, -1]
             len_zagw = soil_width - y_offset - tot_width/2 + tp_width - radius * 2 - zagw_width * 3/2
@@ -2015,7 +2015,7 @@ class Query(object):
 
             # add Information Textbox
             ax.text(x=x_abf_mid, y=y_abf_ground - 100,
-                    s="Dieser Anteil wird hier \ndem Direktabfluss zugeordnet.\nWenn möglich selbst entscheiden.",
+                    s="Dieser Anteil wird hier \ndem Abfluss zugeordnet.\nWenn möglich selbst entscheiden.",
                     ha='center', va='center',
                     fontsize=skouts[0].texts[0].get_fontsize()*cex,
                     backgroundcolor="#FFFFFF")
@@ -2039,8 +2039,8 @@ class Query(object):
             else:
                 pos_oa = (300, y_offset + oa_width/2)
             skouts[0].texts[ind_oa].set_position(pos_oa)
-        if "Zwischenabfluss\nzum Direktabfluss" in labels_sk2:
-            ind_zagw = labels_sk2.index("Zwischenabfluss\nzum Direktabfluss")
+        if "Zwischenabfluss\nzum Abfluss" in labels_sk2:
+            ind_zagw = labels_sk2.index("Zwischenabfluss\nzum Abfluss")
             skouts[1].texts[ind_zagw].set_x(
                 skouts[1].texts[ind_zagw].get_position()[0] - 50)
 
