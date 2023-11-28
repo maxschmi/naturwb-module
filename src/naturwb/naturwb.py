@@ -1815,7 +1815,7 @@ class Query(object):
         # -------------------
         self.fig_bar = fig
 
-    def _make_plot_sankey(self, figsize=(15, 15), cex=1):
+    def _make_plot_sankey(self, figsize=(15, 15), cex=1, add_pet=True):
         """
         Create the Sankey figure.
 
@@ -1829,6 +1829,9 @@ class Query(object):
         cex : float, optional
             The factor to change the size of the labels.
             The default is 1.
+        add_pet : bool, optional
+            Should the potential evapotranspiration be added to the plot?
+            The default is True.
 
         Returns
         -------
@@ -1950,9 +1953,10 @@ class Query(object):
         self.skouts = skouts
 
         # add potential evapotranspiration
-        et_label = skouts[0].texts[labels_sk1.index("Evapotranspiration")]
-        et_label.set_text(et_label.get_text()+
-                          f"\n(pot. ET: {self.naturwb_ref['pet'].round():.0f} mm/a)")
+        if add_pet:
+            et_label = skouts[0].texts[labels_sk1.index("Evapotranspiration")]
+            et_label.set_text(et_label.get_text()+
+                            f"\n(pot. ET: {self.naturwb_ref['pet'].round():.0f} mm/a)")
 
         # add Path for OA
         if oa_width != 0:
