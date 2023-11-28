@@ -655,14 +655,14 @@ class Query(object):
                 index_col=["gen_id", "nat_id", "lanu_id"])
 
             # get the results
-            sql_results = (
-                'SELECT tr.sim_id, tsp.gen_id, tr.lanu_id, tr.bf_id, ' +
-                    'n, "kap.A.", et, oa, za, bfid_area, inf, tp, ' +
-                    'za_gwnah_flag ' +
-                "FROM tbl_simulation_polygons tsp " +
-                "INNER JOIN tbl_results tr on tsp.sim_id = tr.sim_id " +
-                "INNER JOIN tbl_soils ts on tr.bf_id = ts.bf_id " +
-                "WHERE tsp.sim_id IN ({0})".format(
+            sql_results = ('''
+                SELECT tr.sim_id, tsp.gen_id, tr.lanu_id, tr.bf_id,
+                        n, "kap.A.", et, oa, za, bfid_area, inf, tp, wea_et as pet,
+                        za_gwnah_flag
+                FROM tbl_simulation_polygons tsp
+                INNER JOIN tbl_results tr on tsp.sim_id = tr.sim_id
+                INNER JOIN tbl_soils ts on tr.bf_id = ts.bf_id
+                WHERE tsp.sim_id IN ({0})'''.format(
                     ", ".join(self.sim_shps_clip.index.get_level_values("sim_id")
                               .unique().astype(str)))
                 )
@@ -677,7 +677,7 @@ class Query(object):
                 SELECT sim_id, stat_id, buek_flag, bfid_undef,
                        lanu_flag, wea_flag, wea_dist, wea_flag_n, wea_dist_n,
                        sl_flag, sl_dist, sl_std, sun_flag, sun_dist, rs_std,
-                       wea_t_std, wea_et_std, wea_n_wihj_std, wea_n_sohj_std, wea_et
+                       wea_t_std, wea_et_std, wea_n_wihj_std, wea_n_sohj_std
                 FROM tbl_simulation_polygons tsp
                     JOIN tbl_soils ts ON ts.gen_id=tsp.gen_id
                 WHERE sim_id IN ({simids})
@@ -736,7 +736,7 @@ class Query(object):
 
     def _aggregate_results(
             self,
-            res_agg_cols=["n", "kap.A.", "et", "runoff",
+            res_agg_cols=["n", "kap.A.", "et", "pet", "runoff",
                           "oa", "za", "za_gwnah", "tp"]):
         """
         Aggregate the results to the different variables.
@@ -1885,7 +1885,7 @@ class Query(object):
                 -df_sankey[["za", "tp"]]]
             ).to_list()
         labels_sk1=["Niederschlag", "kapillarer Aufstieg",
-                "aktuelle Evapotranspiration", "Oberflächenabfluss",
+                "Evapotranspiration", "Oberflächenabfluss",
                 "Zwischenabfluss", "Tiefenperkolation"]
         orientations_sk1=[1,-1,
                     1, 1,
@@ -1947,6 +1947,12 @@ class Query(object):
         # aditional arrows
         ##################
         skouts = sk.finish()
+        self.skouts = skouts
+
+        # add potential evapotranspiration
+        et_label = skouts[0].texts[labels_sk1.index("Evapotranspiration")]
+        et_label.set_text(et_label.get_text()+
+                          f"\n(pot. ET: {self.naturwb_ref['pet'].round():.0f} mm/a)")
 
         # add Path for OA
         if oa_width != 0:
