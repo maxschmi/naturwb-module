@@ -1427,7 +1427,10 @@ class Query(object):
                 x=0.5,
                 xanchor="center"),
             font_size=16,
-            hoverlabel=dict(font=dict(size=14))
+            hoverlabel=dict(font=dict(size=14)),
+            legend=dict(
+                orientation="h",
+                valign="bottom")
         )
 
         # save fig to object
