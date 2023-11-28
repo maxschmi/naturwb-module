@@ -677,7 +677,7 @@ class Query(object):
                 SELECT sim_id, stat_id, buek_flag, bfid_undef,
                        lanu_flag, wea_flag, wea_dist, wea_flag_n, wea_dist_n,
                        sl_flag, sl_dist, sl_std, sun_flag, sun_dist, rs_std,
-                       wea_t_std, wea_et_std, wea_n_wihj_std, wea_n_sohj_std
+                       wea_t_std, wea_et_std, wea_n_wihj_std, wea_n_sohj_std, wea_et
                 FROM tbl_simulation_polygons tsp
                     JOIN tbl_soils ts ON ts.gen_id=tsp.gen_id
                 WHERE sim_id IN ({simids})
@@ -855,7 +855,7 @@ class Query(object):
                             (coef_nolanu_i[["area"]]
                             .groupby(["gen_id", "nat_id"]).sum()))
                         coef_nolanu_i.drop("area", inplace=True, axis=1)
-                        self.coef_lanu = self.coef_lanu.append(coef_nolanu_i)
+                        self.coef_lanu = pd.concat([self.coef_lanu,coef_nolanu_i])
 
                     if len(missing_genids) == 0:
                         break
@@ -1212,7 +1212,7 @@ class Query(object):
 
         # add urban_shp
         if type(urban_shp_plot) == MultiPolygon:
-            long = []; lat = []
+            long, lat = [],[]
             for geom in urban_shp_plot.geoms:
                 xy = geom.exterior.xy
                 long.append(xy[0].tolist())
@@ -1879,11 +1879,13 @@ class Query(object):
         #############
         len_tp = soil_width - y_offset - tot_width/2 - radius - tp_width/2
         # remove flows with 0
-        flows_sk1=df_sankey[["n", "kap.A."]].append(
-                -df_sankey[["et", "oa"]]).append(
-                -df_sankey[["za", "tp"]]).to_list()
+        flows_sk1=pd.concat([
+                df_sankey[["n", "kap.A."]],
+                -df_sankey[["et", "oa"]],
+                -df_sankey[["za", "tp"]]]
+            ).to_list()
         labels_sk1=["Niederschlag", "kapillarer Aufstieg",
-                "Evapotranspiration", "Oberflächenabfluss",
+                "aktuelle Evapotranspiration", "Oberflächenabfluss",
                 "Zwischenabfluss", "Tiefenperkolation"]
         orientations_sk1=[1,-1,
                     1, 1,
@@ -1912,8 +1914,9 @@ class Query(object):
         ###########
         if df_sankey["za"] != 0:
             # remove flows with 0
-            flows_sk2=df_sankey[["za"]].append(
-                    -df_sankey[["za_oa", "za_gwnah"]]).to_list()
+            flows_sk2=pd.concat([
+                df_sankey[["za"]],
+                -df_sankey[["za_oa", "za_gwnah"]]]).to_list()
             labels_sk2=["delete",
                     "Zwischenabfluss\nzum Abfluss",
                     "Zwischenabfluss\nbei hohem Grundwasser"]
