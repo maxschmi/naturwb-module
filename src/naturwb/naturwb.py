@@ -33,6 +33,7 @@ except:
     from shapely.geometry import Polygon as MultiPolygonAdapter
 import numpy as np
 import sqlalchemy
+from sqlalchemy import text as sql_text
 import json
 from textwrap import wrap
 try:
@@ -50,7 +51,6 @@ from io import BytesIO
 import base64
 
 # plotly
-import plotly as ply
 import plotly.graph_objs as go
 from plotly.offline import plot as ply_plot
 
@@ -598,7 +598,7 @@ class Query(object):
         with self.db_engine.connect() as con:
             # clip urban shape with lookup table
 
-            sql_clip = f"""
+            sql_clip = sql_text(f"""
                 WITH urban_geom AS (
                         SELECT ST_GeomFromText('{self.urban_shp.wkt}', 25832) as geom
                     ), clip_sim AS (
@@ -624,7 +624,7 @@ class Query(object):
                     JOIN leg_tklenr ltn ON ltn.tkle_nr=inters.tkle_nr
                     WHERE ST_Dimension(inters.geom)=2
                     GROUP BY inters.sim_id, inters.gen_id, inters.nat_id,
-                            lbc.color, ltn.txt, ltn.kurz;"""
+                            lbc.color, ltn.txt, ltn.kurz;""")
 
             self.sim_shps_clip = gpd.read_postgis(
                 sql=sql_clip,
@@ -635,7 +635,7 @@ class Query(object):
                                           self.sim_shps_clip["area"].sum())
 
             # lookup for landuses in the same NRE with same soil
-            sql_ref_lanus = (
+            sql_ref_lanus = sql_text((
                 "SELECT gen_id, nat_id, tlp.lanu_id, SUM (area) AS area, " +
                 "ll.name as lanu_name FROM tbl_lookup_polygons tlp " +
                 "JOIN leg_lanuid ll ON ll.lanu_id=tlp.lanu_id " +
@@ -647,7 +647,7 @@ class Query(object):
                               .unique().astype(str)),
                     natid=", ".join(self.sim_shps_clip.index
                                     .get_level_values("nat_id")
-                              .unique().astype(str)))
+                              .unique().astype(str))))
 
             self.ref_lanus = pd.read_sql(
                 sql=sql_ref_lanus,
@@ -655,7 +655,7 @@ class Query(object):
                 index_col=["gen_id", "nat_id", "lanu_id"])
 
             # get the results
-            sql_results = ('''
+            sql_results = sql_text(('''
                 SELECT tr.sim_id, tsp.gen_id, tr.lanu_id, tr.bf_id,
                         n, "kap.A.", et, oa, za, bfid_area, inf, tp, wea_et as pet,
                         za_gwnah_flag
@@ -665,7 +665,7 @@ class Query(object):
                 WHERE tsp.sim_id IN ({0})'''.format(
                     ", ".join(self.sim_shps_clip.index.get_level_values("sim_id")
                               .unique().astype(str)))
-                )
+                ))
 
             self.results = pd.read_sql(
                 sql=sql_results,
@@ -673,7 +673,7 @@ class Query(object):
                 index_col=["sim_id", "gen_id", "bf_id", "lanu_id"])
 
             # get the simulation informations like flags etc.
-            sql_sim_infos = ("""
+            sql_sim_infos = sql_text(("""
                 SELECT sim_id, stat_id, buek_flag, bfid_undef,
                        lanu_flag, wea_flag, wea_dist, wea_flag_n, wea_dist_n,
                        sl_flag, sl_dist, sl_std, sun_flag, sun_dist, rs_std,
@@ -686,7 +686,7 @@ class Query(object):
                 ).format(
                     simids=", ".join(self.sim_shps_clip.index
                                      .get_level_values("sim_id")
-                                     .unique().astype(str)))
+                                     .unique().astype(str))))
 
             self.sim_infos = pd.read_sql(
                 sql=sql_sim_infos,
@@ -699,7 +699,7 @@ class Query(object):
         """
         Get the reference shapes from the database from which the landuses were taken
         """
-        sql_ref_polys = (
+        sql_ref_polys = sql_text((
             "SELECT gen_id, nat_id, tlp.lanu_id, area, " +
             "ll.name as lanu_name, geom as geometry " +
             "FROM tbl_lookup_polygons tlp " +
@@ -709,7 +709,7 @@ class Query(object):
             ", ".join(self.sim_shps_clip.index.get_level_values("gen_id")\
                       .unique().astype(str)),
             ", ".join(self.sim_shps_clip.index.get_level_values("nat_id")\
-                      .unique().astype(str)))
+                      .unique().astype(str))))
 
         with self.db_engine.connect() as con:
             self.ref_polys = gpd.read_postgis(
@@ -719,13 +719,13 @@ class Query(object):
                 index_col=["gen_id", "nat_id", "lanu_id"])
 
     def _sql_nre(self):
-        sql_nre = (
+        sql_nre = sql_text((
             """SELECT nat_id, name,
                       ST_Transform(geom, 4326) geometry
                FROM tbl_nre
                WHERE tbl_nre.nat_id in ({});""".format(
                 ", ".join(self.sim_shps_clip.index.get_level_values("nat_id")
-                          .unique().astype(str))))
+                          .unique().astype(str)))))
         with self.db_engine.connect() as con:
             self.nre = gpd.read_postgis(
                 sql=sql_nre,
@@ -814,7 +814,7 @@ class Query(object):
         # check for those missing landuses in the surrounding areas
         if len(self.missing_lanus) != 0:
             sql_urban_geom = f"ST_GeomFromText('{self.urban_shp.wkt}', 25832)"
-            sql_ref_nolanu_raw = (
+            sql_ref_nolanu_raw = sql_text(
                 "SELECT gen_id, lanu_id, SUM(area) as area " +
                 "FROM tbl_lookup_polygons "+
                 "WHERE ST_Intersects(geom, " +
@@ -973,7 +973,7 @@ class Query(object):
             A DataFrame with the simulation input parameters.
         """
         if (not hasattr(self, "input_paras")) or renew:
-            sql_input_paras = (
+            sql_input_paras = sql_text((
                 "SELECT * FROM view_simulation_paras " +
                 "WHERE sim_id IN ({simids}) " +
                 "AND lanu_id IN ({lanuids})").format(
@@ -981,7 +981,7 @@ class Query(object):
                     get_level_values("sim_id").unique().astype(str)),
                 lanuids=", ".join(self.results.index.
                     get_level_values("lanu_id").unique().astype(str))
-                )
+                ))
             with self.db_engine.connect() as con:
                 self.input_paras = pd.read_sql(
                     sql=sql_input_paras,
@@ -1445,8 +1445,8 @@ class Query(object):
         # plot code
         # ----------
         lanu_parts = self.coef_all.prod(axis=1).groupby("lanu_id").sum().to_frame("coef")
-        sql_leg = ("SELECT lanu_id, name FROM leg_lanuid " +
-                "WHERE lanu_id in ({})").format(", ".join(lanu_parts.index.astype(str)))
+        sql_leg = sql_text(("SELECT lanu_id, name FROM leg_lanuid " +
+                "WHERE lanu_id in ({})").format(", ".join(lanu_parts.index.astype(str))))
         with self.db_engine.connect() as con:
             lanu_parts = lanu_parts.join(pd.read_sql(con=con, sql=sql_leg, index_col="lanu_id"))
 
@@ -1482,9 +1482,9 @@ class Query(object):
         # get df
         # ----------
         lanu_parts = self.coef_all.prod(axis=1).groupby("lanu_id").sum().to_frame("coef")
-        sql_leg = ("SELECT lanu_id, name FROM leg_lanuid " +
+        sql_leg = sql_text(("SELECT lanu_id, name FROM leg_lanuid " +
                    "WHERE lanu_id in ({})").format(
-                       ", ".join(lanu_parts.index.astype(str)))
+                       ", ".join(lanu_parts.index.astype(str))))
         with self.db_engine.connect() as con:
             lanu_parts = lanu_parts.join(
                 pd.read_sql(con=con, sql=sql_leg, index_col="lanu_id"))
@@ -1567,18 +1567,18 @@ class Query(object):
         res_3_ternary = res_3_ternary.join(self.coef_gen * self.coef_sim)
 
         # add legend information to the dataframe
-        sql_ternary_leg = (
+        sql_ternary_leg = sql_text((
             "SELECT tsp.sim_id, txt as leg_txt, kurz as leg_kurz, color " +
             "FROM tbl_simulation_polygons tsp " +
             "JOIN leg_tklenr lt ON lt.tkle_nr=tsp.tkle_nr " +
             "JOIN leg_buek_col lbc ON lbc.sym_nr=tsp.sym_nr "
             "WHERE tsp.sim_id in ({simids})"
-        ).format(
-            simids=", ".join(
-                res_3_ternary.index.get_level_values("sim_id")
-                .unique().astype(str)
-            )
-        )
+            ).format(
+                simids=", ".join(
+                    res_3_ternary.index.get_level_values("sim_id")
+                    .unique().astype(str)
+                )
+        ))
 
         with self.db_engine.connect() as con:
             ternary_leg = pd.read_sql(sql=sql_ternary_leg,
