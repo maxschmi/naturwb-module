@@ -712,7 +712,7 @@ class Query(object):
                       .unique().astype(str)))
 
         with self.db_engine.connect() as con:
-            self.ref_polys = gpd.read_postgis(
+            self._ref_polys = gpd.read_postgis(
                 sql=sql_ref_polys,
                 con=con,
                 geom_col="geometry",
@@ -1005,6 +1005,22 @@ class Query(object):
                         "et": "ET", "oa":"OA", "za": "ZA",
                         "za_gwnah": "ZA_GWnah"}, axis=1)
             return self.results_genid
+
+    @property
+    def ref_polys(self):
+        """
+        Get the reference polygons from which the landuses were taken.
+
+        Returns
+        -------
+        geopandas.GeoDataFrame
+            The reference polygons from which the landuses were taken.
+
+        """
+        if (not hasattr(self, "_ref_polys")):
+            self._sql_query_ref_polys()
+
+        return self._ref_polys
 
     def _make_plot_sim_shps_clip(self, width=20, cex=1,
                                bbox_x_gen=0, bbox_x_nat=0):
